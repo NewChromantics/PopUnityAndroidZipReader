@@ -1,7 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Collections.LowLevel.Unsafe;    
 
+using UnityEngine.Profiling;
+using System;
+using Unity.Collections;//	NativeArray
 
 public class PopAndroidFileReader
 {
@@ -99,7 +103,7 @@ public class PopAndroidFileReader
 
 	public byte[] ReadBytes(long Position, long Size)
 	{
-		var ReadPosition = Position + FileOffset;
+		var ReadPosition = Position;// + FileOffset;
 		if (ReadPosition < FileCurrentPosition)
 			throw new System.Exception("Trying to read " + ReadPosition + "(" + Position + " + offset " + FileOffset + ") but currently at " + FileCurrentPosition + " and cannot go backwards");
 
@@ -110,17 +114,15 @@ public class PopAndroidFileReader
 		if (Skipped < ToSkip)
 			throw new System.Exception("Trying to skip " + ToSkip + " but only skipped " + Skipped + " Position is " + FileCurrentPosition + " FileOffset=" + FileOffset + " FileLength=" + FileLength + "");
 
-		Size = Mathf.Min((int)Size, 200);
-
 		//	sbyte reported as obsolete, "use sbyte"
+		//var Bufferj = AndroidJNI.NewSByteArray((int)Size);	//	then AndroidJNI.FromSByteArray = all zeros
+		//var Bufferj = AndroidJNI.NewByteArray((int)Size);	//	then AndroidJNI.FromSByteArray = all zeros
 		//	gr: sbyte always reads only 0 bytes
-		var Bufferj = AndroidJNI.NewSByteArray((int)Size);
-		//var Bufferj = AndroidJNI.NewByteArray((int)Size);
-		//var Buffer = new sbyte[Size];
-		//var BytesRead = FileInputStream.Call<int>("read", Buffer);
+		var Bufferj = new sbyte[Size];	//	always returns 0 bytes read
+		//var Bufferj = new byte[Size];	//	faster but contents always 0
 		var BytesRead = FileInputStream.Call<int>("read", Bufferj);
 		FileCurrentPosition += BytesRead;
-		Debug.Log("Read " + BytesRead + "/" + Size);
+		Debug.Log("Read " + BytesRead + "/" + Size + " now at "+ FileCurrentPosition);
 
 		//	-1 means EOF
 		if (BytesRead == -1)
@@ -129,23 +131,14 @@ public class PopAndroidFileReader
 		if (BytesRead <= 0)
 			return null;
 
-		//	read back data
-		var Buffer = AndroidJNI.FromSByteArray(Bufferj);
-
-		//	debug! why is the data all zeroes!
-		for (var i = 0; i < BytesRead; i += 200)
-		{
-			Debug.Log("Data from " + i);
-			string SubStr = "";
-			for (var d = 0; d < 200; d++)
-				SubStr += Buffer[i] + " ";
-			Debug.Log(SubStr);
-			break;
-		}
-
-
 		
-
+		//	read back data
+		//var Buffer = AndroidJNI.FromSByteArray(Bufferj);
+		var Buffer = Bufferj;
+		//var BufferjPointer = new IntPtr(Bufferj).ToPointer();
+		//NativeArray<int> byteBuffer = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<int>(BufferjPointer, BytesRead, Allocator.None);
+		//return Bufferj;
+		
 		//	turn sbyte to byte
 		var Bufferu = new byte[BytesRead];
 		for (var i = 0; i < Bufferu.Length; i++)
