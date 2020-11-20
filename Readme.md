@@ -1,6 +1,7 @@
 What?
 ====================
 I needed to get random access (and not copy-all-at-once) to a `StreamingAssets` file. Unity doesn't provide an interface to this. 
+
 There are a few plugins around with loads of depedencies, lots of java code, or lots of c code, which seems uncessary when we can use JNI inside c#
 
 How?
