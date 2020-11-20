@@ -35,40 +35,13 @@ public class PopAndroidFileReader
 		{
 			throw new System.Exception("Failed to open zip file (" + JarOrZipOrApkFilename + "): " + e.Message);
 		}
-		/*
-		var StringSig = "Ljava/lang/String;";
-		var VoidSig = "V";
-
-		var ZipClass = AndroidJNI.FindClass("com.android.vending.expansion.zipfile.ZipResourceFile");
-		var ConstructorName = "<init>";
-		var ConstructorSignature = "("+StringSig+")" + VoidSig +"";    //	1 string arg, return void
-		var ConstructorMethod = AndroidJNI.GetMethodID(ZipClass, ConstructorName, ConstructorSignature);
-		var JarOrZipOrApkFilename_j = AndroidJNI.NewString(JarOrZipOrApkFilename);
-
-		var ConstructorArguments = new jvalue[1];
-		ConstructorArguments[0].l = JarOrZipOrApkFilename_j;	//	.l = L in signature
-		ZipFile = AndroidJNI.NewObject(ZipClass, ConstructorMethod, ConstructorArguments);
-		if (ZipFile==System.IntPtr.Zero)
-		*/
 		if (ZipFile == null)
 			throw new System.Exception("Failed to open zip/jar/apk " + JarOrZipOrApkFilename);
 
-		var GetAssetFileDescriptorName = "getAssetFileDescriptor";
 		try
 		{
+			var GetAssetFileDescriptorName = "getAssetFileDescriptor";
 			AssetFileDescriptor = ZipFile.Call<AndroidJavaObject>(GetAssetFileDescriptorName, InternalFilename);
-			/*
-			var AssetFileDescriptorClassName = "android/content/res/AssetFileDescriptor";
-			var AssetFileDescriptorSig = "L" + AssetFileDescriptorClassName + ";";
-			var getAssetFileDescriptorSignature = "(" + StringSig + ")" + AssetFileDescriptorSig + "";
-			var getAssetFileDescriptorMethod = AndroidJNI.GetMethodID(ZipClass, GetAssetFileDescriptorName, getAssetFileDescriptorSignature);
-			var InternalFilename_j = AndroidJNI.NewString(InternalFilename);
-			var GetAssetFileDescriptorArguments = new jvalue[1];
-			GetAssetFileDescriptorArguments[0].l = InternalFilename_j;
-			var FileDescriptor = AndroidJNI.CallObjectMethod(ZipFile, getAssetFileDescriptorMethod, GetAssetFileDescriptorArguments);
-			//	gr: returns a null object when filenot found (no exception set in java vm!)
-			if (FileDescriptor == System.IntPtr.Zero)
-			*/
 			if (AssetFileDescriptor == null)
 				throw new System.Exception("Opened zip but failed to open " + InternalFilename);
 		}
@@ -109,7 +82,6 @@ public class PopAndroidFileReader
 			throw new System.Exception("Failed to open file inside zip file (" + InternalFilename + "): " + e.Message);
 		}
 
-		//throw new System.Exception("Got file descriptor offset="+ FileOffset +" length="+ FileLength);
 		Debug.Log("Got file descriptor, and file input stream; offset=" + FileOffset + " length=" + FileLength);
 	}
 
@@ -150,8 +122,17 @@ public class PopAndroidFileReader
 		FileCurrentPosition += BytesRead;
 		Debug.Log("Read " + BytesRead + "/" + Size);
 
+		//	-1 means EOF
+		if (BytesRead == -1)
+			throw new System.Exception("End of File at " + FileCurrentPosition);
+
+		if (BytesRead <= 0)
+			return null;
+
+		//	read back data
 		var Buffer = AndroidJNI.FromSByteArray(Bufferj);
 
+		//	debug! why is the data all zeroes!
 		for (var i = 0; i < BytesRead; i += 200)
 		{
 			Debug.Log("Data from " + i);
@@ -163,12 +144,7 @@ public class PopAndroidFileReader
 		}
 
 
-		//	-1 means EOF
-		if (BytesRead == -1)
-			throw new System.Exception("End of File at " + FileCurrentPosition);
-
-		if (BytesRead <= 0)
-			return null;
+		
 
 		//	turn sbyte to byte
 		var Bufferu = new byte[BytesRead];
