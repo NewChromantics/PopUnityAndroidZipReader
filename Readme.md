@@ -13,6 +13,8 @@ Unity will now compile `.java` into jar/aar files automatically, from ANY folder
 
 This should load from any `.jar`,`.obb`,`.apk`,`.zip` which (I think) has zero compression (an `.apk` is not compressed)
 
+Documentation for the `AssetFileDescriptor` that we get from the zip is here https://developer.android.com/reference/android/content/res/AssetFileDescriptor
+
 
 Why not?
 =================
